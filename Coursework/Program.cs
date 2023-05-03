@@ -8,17 +8,18 @@ namespace Coursework
         static void Main(string[] args)
         {
             int populationSize = 50,
-                maxIterations = 500,
-                maxIterWithoutChanges = 50,
-                toNextPopulation = 40;
+                maxIterations = 1000,
+                maxIterWithoutChanges = 500,
+                toNextPopulation = 16,
+                countOfvars = 2;
             float a = -1,
                 b = 2,
                 B = a;
             double eps = 0.000001f;
             int power = GetPower(a, b, eps);
             double k = (b - B) / (Math.Pow(2, power) - 1);
-            float pm = 0.2f,
-                pc = 0.8f;
+            float pm = 1f,
+                pc = 0.9f;
             List<int[]> oldPop = new List<int[]>();
             List<int[]> newPop = new List<int[]>();
             oldPop = RandomPopulation(populationSize, power);
@@ -31,7 +32,7 @@ namespace Coursework
             {
                 n++;
                 newPop = NewPopulation(oldPop, pm, pc, toNextPopulation, k, B);
-                int[] best = BestV(newPop, k, B);
+                int[] best = BestV(newPop, power, k, B);
                 newRes = func(FromBinaty(best, power, k, B));
                 error = Math.Abs(newRes - oldRes);
                 Console.WriteLine("Error = " + error);
@@ -53,28 +54,155 @@ namespace Coursework
             if(iterWithoutChanges < maxIterWithoutChanges)
             {
 
-                Console.WriteLine("Max iterations reached, res x = " + FromBinaty(BestV(newPop, k, B), power, k, B));
+                Console.WriteLine("Max iterations reached, res x = " + FromBinaty(BestV(newPop, power, k, B), power, k, B));
 
             }
             else
             {
-                Console.WriteLine("New populations don't have better individes, res x = " + FromBinaty(BestV(newPop, k, B), power, k, B));
+                Console.WriteLine("New populations don't have better individes, res x = " + FromBinaty(BestV(newPop, power, k, B), power, k, B));
             }
 
             Console.ReadLine();
         }
+        public static List<int[]> SortPopulation(List<int[]> pop,int power, double k, float B)
+        {
+            for(int i =  0; i < pop.Count; i++)
+            {
+                for(int j = i +1; j < pop.Count; j++)
+                {
+                    var res1 = FromBinaty(pop[i], power, k, B);
+                    var res2 = FromBinaty(pop[j], power, k, B);
+                    if (func(res1) > func(res2))
+                    {
+                        var temp = pop[i];
+                        pop[i] = pop[j];
+                        pop[j] = temp;
+                    }
+                }
+            }
+            return pop;
+        }
+        public static List<int[]> SortPopulation(List<int[]> pop, int power, int countOfvars, double k, float B)
+        {
+            for (int i = 0; i < pop.Count; i++)
+            {
+                for (int j = i + 1; j < pop.Count; j++)
+                {
+                    var res1 = FromBinaty(pop[i], power, countOfvars, k, B);
+                    var res2 = FromBinaty(pop[j], power, countOfvars, k, B);
+                    if (func2(res1) > func2(res2))
+                    {
+                        var temp = pop[i];
+                        pop[i] = pop[j];
+                        pop[j] = temp;
+                    }
+                }
+            }
+            return pop;
+        }
+
+        private static int func2(List<double> res1)
+        {
+            throw new NotImplementedException();
+        }
+
         public static List<int[]> NewPopulation(List<int[]> oldPop, float pm, float pc, int toNextPopulation, double k, float B)
         {
             int populationSize = oldPop.Count;
             int power = oldPop[0].Length;
-            List<int[]> newPop = RandomPopulation(populationSize, power);
-            List<int[]> smallPop = Evaluate(oldPop, pm, pc, toNextPopulation, k, B);
-            for(int i = 0; i < toNextPopulation; i++)
+            List<int[]> pop = new List<int[]>();
+            List<int[]> sortedpop = oldPop;
+            SortPopulation(sortedpop, power, k, B);
+            for (int i = 0; i < toNextPopulation; i++)
             {
-                newPop[i] = smallPop[i];
+                pop.Add(sortedpop[i]);
             }
-            return newPop;
+            List<int[]> rouletteRes = Roulette(sortedpop, pm, pc, toNextPopulation, k, B);
+            for(int i = 0; i < rouletteRes.Count; i++)
+            {
+                pop.Add(rouletteRes[i]);
+            }
+            return pop;
         }
+
+        private static List<int[]> Roulette(List<int[]> sortedpop, float pm, float pc, int toNextPopulation, double k, float B)
+        {
+            Random rnd = new Random();
+            int power = sortedpop[0].Length;
+            List<int[]> res = new List<int[]>();
+            double worst = func(FromBinaty(sortedpop[sortedpop.Count - 1], power, k, B));
+            double sum = 0;
+            List<double> r = new List<double>();
+            for(int i = 0; i < sortedpop.Count; i++)
+            {
+                double temp = worst - func(FromBinaty(sortedpop[i], power, k, B)) + 1;
+                
+                r.Add(temp);
+                sum += temp;
+            }
+
+            List<double> sectors = new List<double>();
+            for (int i=0;i<sortedpop.Count;i++)
+            {
+                r[i] /= sum;
+                if (i != 0)
+                {
+                    sectors.Add(r[i] + sectors[i-1]);
+                }
+                else
+                {
+                    sectors.Add(r[i]);
+                }
+
+            }
+            /*
+            for(int i = 0; i < sortedpop.Count ; i++)
+            {
+                Console.WriteLine(func(FromBinaty(sortedpop[i], power,k,B)) + " - " + sectors[i]);
+            }
+            */
+
+            for(int i = 0; i <sortedpop.Count-toNextPopulation; i += 2)
+            {
+                double sec1 = rnd.NextDouble();
+                double sec2 = rnd.NextDouble();
+                int index1 = 0, index2 = 0;
+                for(int j = sectors.Count - 1; j>=0; j--)
+                {
+                    if (sectors[j] < sec1)
+                    {
+                        index1 = j + 1;
+                        break;
+                    }
+                }
+                for(int j = sectors.Count - 1; j>=0; j--)
+                {
+                    if (sectors[j] < sec2)
+                    {
+                        index2 = j + 1;
+                        break;
+                    }
+                }
+                var v1 = sortedpop[index1];
+                var v2 = sortedpop[index2];
+                double PM = rnd.NextDouble();
+                if (PM < pm)
+                {
+                    Mutation(v1);
+                    Mutation(v2);
+                }
+                double PC = rnd.NextDouble();
+                if (PC < pc)
+                {
+                    Cross(v1, v2);
+                }
+                res.Add(v1);
+                res.Add(v2);
+
+            }
+            return res;
+        }
+
         public static double func(double x)
         {
             return (x * Math.Sin(10 * x * Math.PI) + 1);
@@ -94,6 +222,21 @@ namespace Coursework
             }
             return (temp * k + B);
         }
+        public static List<double> FromBinaty(int[] bin, int power, int countOfvars, double k, float B)
+        {
+            List<double> list = new List<double>();
+            for(int i = 0; i<countOfvars; i++)
+            {
+                double temp = 0;
+                for (int j = power-1; j>=0; j--)
+                {
+                    temp += bin[i*power+j] * Math.Pow(2, i);
+                }
+                list.Add(temp);
+            }
+            return list;
+        }
+
         public static List<int[]> RandomPopulation(int populationSize, int power)
         {
             Random random = new Random();
@@ -109,7 +252,7 @@ namespace Coursework
             }
             return list;
         }
-        public static int[] Mutation(int[] v)
+        public static void Mutation(int[] v)
         {
             Random rnd = new Random();
             int power = v.Length;
@@ -122,7 +265,6 @@ namespace Coursework
             {
                 v[index] = 1;
             }
-            return v;
         }
         public static List<int[]> Cross(int[]v1, int[]v2)
         {
@@ -167,7 +309,7 @@ namespace Coursework
                 if (currPm < pm)
                 {
                     //Console.WriteLine("Mutation detected");
-                    list2[i] = Mutation(list2[i]);
+                    Mutation(list2[i]);
                 }
             }
             for(int i = 0; i < toNextPopulation; i += 2)
@@ -183,8 +325,9 @@ namespace Coursework
             }
             return list2;
         }
-        public static int[] BestV(List<int[]> population, double k, float B)
+        public static int[] BestV(List<int[]> population, int power, double k, float B)
         {
+            /*
             int power = population[0].Length;
             int populationSize = population.Count;
             int[] best = population[0];
@@ -197,9 +340,16 @@ namespace Coursework
                     best = population[i];
                     bestRes = res2;
                 }
-            }
+            }*/
+            var best = SortPopulation(population, power, k, B)[0];
             return best;
         }
+        public static int[] BestV(List<int[]> population, int power, int countOfvars, double k, float B)
+        {
+            var best = SortPopulation(population, power, countOfvars, k, B)[0];
+            return best;
+        }
+
 
     }
 }
