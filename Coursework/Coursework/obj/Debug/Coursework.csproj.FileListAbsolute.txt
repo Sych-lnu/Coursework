@@ -1,0 +1,8 @@
+D:\C# projects\Coursework\Coursework\bin\Debug\Coursework.exe.config
+D:\C# projects\Coursework\Coursework\bin\Debug\Coursework.exe
+D:\C# projects\Coursework\Coursework\bin\Debug\Coursework.pdb
+D:\C# projects\Coursework\Coursework\obj\Debug\Coursework.csproj.AssemblyReference.cache
+D:\C# projects\Coursework\Coursework\obj\Debug\Coursework.csproj.SuggestedBindingRedirects.cache
+D:\C# projects\Coursework\Coursework\obj\Debug\Coursework.csproj.CoreCompileInputs.cache
+D:\C# projects\Coursework\Coursework\obj\Debug\Coursework.exe
+D:\C# projects\Coursework\Coursework\obj\Debug\Coursework.pdb
